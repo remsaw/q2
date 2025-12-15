@@ -241,106 +241,73 @@ if sheet_view == "Overview":
     
     st.markdown("---")
     
-    # Performance by Governorate and Program
-    col1, col2 = st.columns(2)
+    # Performance by Governorate and Program - Full Distribution with Detailed Metrics
+    st.subheader("📊 أداء المحافظات (Performance by Governorate)")
     
-    col1, col2 = st.columns(2)
+    gov_performance_full = trainee_df.groupby('المحافظة').apply(
+        lambda x: {
+            'success_count': (x['Attendance'] >= 60).sum(),
+            'fail_count': (x['Attendance'] < 60).sum(),
+            'total': len(x),
+            'success_rate': (x['Attendance'] >= 60).sum() / len(x) * 100,
+            'avg_score': x['Attendance'].mean()
+        }
+    ).reset_index()
+    gov_performance_full.columns = ['المحافظة', 'metrics']
+    gov_performance_full = gov_performance_full.dropna()
+    gov_performance_full['success_rate'] = gov_performance_full['metrics'].apply(lambda x: x['success_rate'])
+    gov_performance_full['total_trainees'] = gov_performance_full['metrics'].apply(lambda x: x['total'])
+    gov_performance_full['avg_score'] = gov_performance_full['metrics'].apply(lambda x: x['avg_score'])
+    gov_performance_full = gov_performance_full.sort_values('success_rate', ascending=True)
     
-    with col1:
-        st.subheader("🏆 أعلى 5 محافظات أداءً (Top 5 Governorates)")
-        gov_performance = trainee_df.groupby('المحافظة').apply(
-            lambda x: {
-                'success_count': (x['Attendance'] >= 60).sum(),
-                'total': len(x),
-                'success_rate': (x['Attendance'] >= 60).sum() / len(x) * 100,
-                'avg_score': x['Attendance'].mean()
-            }
-        ).reset_index()
-        gov_performance.columns = ['المحافظة', 'metrics']
-        gov_performance = gov_performance.dropna()
-        gov_performance['success_rate'] = gov_performance['metrics'].apply(lambda x: x['success_rate'])
-        gov_performance = gov_performance.sort_values('success_rate', ascending=False).head(5)
-        
-        fig = px.bar(
-            gov_performance,
-            x='success_rate',
-            y='المحافظة',
-            orientation='h',
-            labels={'success_rate': 'معدل النجاح (%)', 'المحافظة': 'المحافظة'},
-            title="أعلى 5 محافظات أداءً",
-            color='success_rate',
-            color_continuous_scale='Greens'
-        )
-        fig.update_traces(text=gov_performance['success_rate'].round(2), textposition='outside')
-        st.plotly_chart(fig, use_container_width=True)
+    fig = px.bar(
+        gov_performance_full,
+        x='success_rate',
+        y='المحافظة',
+        orientation='h',
+        hover_data={'total_trainees': True, 'avg_score': ':.2f', 'success_rate': ':.1f'},
+        labels={'success_rate': 'معدل النجاح (%)', 'المحافظة': 'المحافظة', 'total_trainees': 'عدد المتدربين', 'avg_score': 'متوسط الدرجات'},
+        title="أداء جميع المحافظات",
+        color='success_rate',
+        color_continuous_scale='RdYlGn'
+    )
+    fig.update_traces(text=gov_performance_full['success_rate'].round(1), textposition='outside')
+    fig.update_layout(height=max(400, len(gov_performance_full) * 20), xaxis_title='معدل النجاح (%)')
+    st.plotly_chart(fig, use_container_width=True)
     
-    with col2:
-        st.subheader("🎯 أعلى 5 برامج أداءً (Top 5 Programs)")
-        program_performance = trainee_df.groupby('البرنامج التدريبي').apply(
-            lambda x: {
-                'success_count': (x['Attendance'] >= 60).sum(),
-                'total': len(x),
-                'success_rate': (x['Attendance'] >= 60).sum() / len(x) * 100,
-                'avg_score': x['Attendance'].mean()
-            }
-        ).reset_index()
-        program_performance.columns = ['البرنامج التدريبي', 'metrics']
-        program_performance = program_performance.dropna()
-        program_performance['success_rate'] = program_performance['metrics'].apply(lambda x: x['success_rate'])
-        program_performance = program_performance.sort_values('success_rate', ascending=False).head(5)
-        
-        fig = px.bar(
-            program_performance,
-            x='success_rate',
-            y='البرنامج التدريبي',
-            orientation='h',
-            labels={'success_rate': 'معدل النجاح (%)', 'البرنامج التدريبي': 'البرنامج'},
-            title="أعلى 5 برامج أداءً",
-            color='success_rate',
-            color_continuous_scale='Greens'
-        )
-        fig.update_traces(text=program_performance['success_rate'].round(2), textposition='outside')
-        st.plotly_chart(fig, use_container_width=True)
+    # Program performance table with all details
+    st.subheader("📚 أداء البرامج التدريبية (Performance by Program)")
     
-    col1, col2 = st.columns(2)
+    program_performance_full = trainee_df.groupby('البرنامج التدريبي').apply(
+        lambda x: {
+            'success_count': (x['Attendance'] >= 60).sum(),
+            'fail_count': (x['Attendance'] < 60).sum(),
+            'total': len(x),
+            'success_rate': (x['Attendance'] >= 60).sum() / len(x) * 100,
+            'avg_score': x['Attendance'].mean()
+        }
+    ).reset_index()
+    program_performance_full.columns = ['البرنامج التدريبي', 'metrics']
+    program_performance_full = program_performance_full.dropna()
+    program_performance_full['success_rate'] = program_performance_full['metrics'].apply(lambda x: x['success_rate'])
+    program_performance_full['total_trainees'] = program_performance_full['metrics'].apply(lambda x: x['total'])
+    program_performance_full['avg_score'] = program_performance_full['metrics'].apply(lambda x: x['avg_score'])
+    program_performance_full = program_performance_full.sort_values('success_rate', ascending=True)
     
-    with col1:
-        st.subheader("⬇️ أقل 5 محافظات أداءً (Bottom 5 Governorates)")
-        gov_bottom = gov_performance.sort_values('success_rate', ascending=True).head(5)
-        if len(gov_bottom) > 0:
-            fig = px.bar(
-                gov_bottom,
-                x='success_rate',
-                y='المحافظة',
-                orientation='h',
-                labels={'success_rate': 'معدل النجاح (%)', 'المحافظة': 'المحافظة'},
-                title="أقل 5 محافظات أداءً",
-                color='success_rate',
-                color_continuous_scale='Reds'
-            )
-            fig.update_traces(text=gov_bottom['success_rate'].round(2), textposition='outside')
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("لا توجد بيانات كافية للعرض")
-    
-    with col2:
-        st.subheader("⬇️ أقل 5 برامج أداءً (Bottom 5 Programs)")
-        program_bottom = program_performance.sort_values('success_rate', ascending=True).head(5)
-        if len(program_bottom) > 0:
-            fig = px.bar(
-                program_bottom,
-                x='success_rate',
-                y='البرنامج التدريبي',
-                orientation='h',
-                labels={'success_rate': 'معدل النجاح (%)', 'البرنامج التدريبي': 'البرنامج'},
-                title="أقل 5 برامج أداءً",
-                color='success_rate',
-                color_continuous_scale='Reds'
-            )
-            fig.update_traces(text=program_bottom['success_rate'].round(2), textposition='outside')
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("لا توجد بيانات كافية للعرض")
+    fig = px.bar(
+        program_performance_full,
+        x='success_rate',
+        y='البرنامج التدريبي',
+        orientation='h',
+        hover_data={'total_trainees': True, 'avg_score': ':.2f', 'success_rate': ':.1f'},
+        labels={'success_rate': 'معدل النجاح (%)', 'البرنامج التدريبي': 'البرنامج', 'total_trainees': 'عدد المتدربين', 'avg_score': 'متوسط الدرجات'},
+        title="أداء جميع البرامج التدريبية",
+        color='success_rate',
+        color_continuous_scale='RdYlGn'
+    )
+    fig.update_traces(text=program_performance_full['success_rate'].round(1), textposition='outside')
+    fig.update_layout(height=max(400, len(program_performance_full) * 20), xaxis_title='معدل النجاح (%)')
+    st.plotly_chart(fig, use_container_width=True)
     
     st.markdown("---")
     
