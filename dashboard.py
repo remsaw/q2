@@ -180,34 +180,66 @@ if sheet_view == "Overview":
     with col3:
         st.metric("الوسيط (Median Attendance)", f"{median_score:.1f}%")
 
-    # Gauge for target vs achieved
+    # Gauges for target vs achieved
     target_sum = plan_df['عدد المستهدفين'].sum()
     actual_count = len(trainee_df)
     fulfillment_rate = (actual_count / target_sum * 100) if target_sum > 0 else 0
+    
+    target_programs = plan_df['البرنامج التدريبي'].nunique()
+    actual_programs = trainee_df['البرنامج التدريبي'].nunique()
+    programs_rate = (actual_programs / target_programs * 100) if target_programs > 0 else 0
 
-    if target_sum > 0:
-        fig = go.Figure(go.Indicator(
-            mode="gauge+number+delta",
-            value=fulfillment_rate,
-            number={'suffix': '%', 'valueformat': '.1f'},
-            delta={'reference': 100, 'valueformat': '.1f', 'suffix': '%'},
-            title={'text': f"نسبة تحقيق المستهدف<br><sub>الفعلي: {actual_count:,} | المستهدف: {target_sum:,}</sub>"},
-            gauge={
-                'axis': {'range': [0, max(120, fulfillment_rate * 1.1)]},
-                'bar': {'color': 'seagreen'},
-                'threshold': {'line': {'color': 'green', 'width': 4}, 'value': 100},
-                'steps': [
-                    {'range': [0, 50], 'color': '#ffe6e6'},
-                    {'range': [50, 80], 'color': '#fff4e6'},
-                    {'range': [80, 100], 'color': '#e6f3ff'},
-                    {'range': [100, max(120, fulfillment_rate * 1.1)], 'color': '#e6ffe6'}
-                ]
-            }
-        ))
-        fig.update_layout(height=300)
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("لا يوجد مستهدف محدد لعرض المؤشر")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if target_sum > 0:
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number+delta",
+                value=fulfillment_rate,
+                number={'suffix': '%', 'valueformat': '.1f'},
+                delta={'reference': 100, 'valueformat': '.1f', 'suffix': '%'},
+                title={'text': f"نسبة تحقيق المستهدف (المتدربين)<br><sub>الفعلي: {actual_count:,} | المستهدف: {target_sum:,}</sub>"},
+                gauge={
+                    'axis': {'range': [0, max(120, fulfillment_rate * 1.1)]},
+                    'bar': {'color': 'seagreen'},
+                    'threshold': {'line': {'color': 'green', 'width': 4}, 'value': 100},
+                    'steps': [
+                        {'range': [0, 50], 'color': '#ffe6e6'},
+                        {'range': [50, 80], 'color': '#fff4e6'},
+                        {'range': [80, 100], 'color': '#e6f3ff'},
+                        {'range': [100, max(120, fulfillment_rate * 1.1)], 'color': '#e6ffe6'}
+                    ]
+                }
+            ))
+            fig.update_layout(height=400)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("لا يوجد مستهدف محدد لعرض المؤشر")
+    
+    with col2:
+        if target_programs > 0:
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number+delta",
+                value=programs_rate,
+                number={'suffix': '%', 'valueformat': '.1f'},
+                delta={'reference': 100, 'valueformat': '.1f', 'suffix': '%'},
+                title={'text': f"نسبة تنفيذ البرامج التدريبية<br><sub>الفعلي: {actual_programs} | المخطط: {target_programs}</sub>"},
+                gauge={
+                    'axis': {'range': [0, max(120, programs_rate * 1.1)]},
+                    'bar': {'color': 'royalblue'},
+                    'threshold': {'line': {'color': 'green', 'width': 4}, 'value': 100},
+                    'steps': [
+                        {'range': [0, 50], 'color': '#ffe6e6'},
+                        {'range': [50, 80], 'color': '#fff4e6'},
+                        {'range': [80, 100], 'color': '#e6f3ff'},
+                        {'range': [100, max(120, programs_rate * 1.1)], 'color': '#e6ffe6'}
+                    ]
+                }
+            ))
+            fig.update_layout(height=400)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("لا توجد برامج مخططة لعرض المؤشر")
     
     st.markdown("---")
     
