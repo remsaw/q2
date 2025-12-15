@@ -145,6 +145,7 @@ if sheet_view == "Overview":
             color='success_rate',
             color_continuous_scale='Greens'
         )
+        fig.update_traces(text=gov_performance['success_rate'].round(2), textposition='outside')
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
@@ -172,6 +173,7 @@ if sheet_view == "Overview":
             color='success_rate',
             color_continuous_scale='Greens'
         )
+        fig.update_traces(text=program_performance['success_rate'].round(2), textposition='outside')
         st.plotly_chart(fig, use_container_width=True)
     
     st.markdown("---")
@@ -189,6 +191,7 @@ if sheet_view == "Overview":
             labels={'x': 'Number of Trainees', 'y': 'Training Program'},
             title="Top 10 Training Programs by Enrollment"
         )
+        fig.update_traces(text=course_counts.values, textposition='outside')
         fig.update_layout(height=400, showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
     
@@ -215,6 +218,7 @@ if sheet_view == "Overview":
             labels={'x': 'Governorate', 'y': 'Number of Trainees'},
             title="Top 10 Governorates by Trainee Count"
         )
+        fig.update_traces(text=gov_counts.values, textposition='outside')
         fig.update_layout(height=400, showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
     
@@ -227,6 +231,7 @@ if sheet_view == "Overview":
             labels={'x': 'Course Duration (Days)', 'y': 'Number of Trainees'},
             title="Distribution of Course Durations"
         )
+        fig.update_traces(text=duration_counts.values, textposition='outside')
         fig.update_layout(height=400, showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
 
@@ -279,6 +284,7 @@ elif sheet_view == "Training Plan":
             labels={'x': 'Department', 'y': 'Number of Courses'},
             title="Course Distribution by Department"
         )
+        fig.update_traces(text=dept_dist.values, textposition='outside')
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
@@ -291,6 +297,7 @@ elif sheet_view == "Training Plan":
             labels={'x': 'Target Participants', 'y': 'Training Program'},
             title="Top Programs by Target Participants"
         )
+        fig.update_traces(text=program_targets.values, textposition='outside')
         st.plotly_chart(fig, use_container_width=True)
     
     # Timeline
@@ -405,6 +412,7 @@ elif sheet_view == "Trainee Details":
             labels={'x': 'Number of Trainees', 'y': 'Job Position'},
             title="Top 10 Job Positions"
         )
+        fig.update_traces(text=job_counts.values, textposition='outside')
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
@@ -417,6 +425,7 @@ elif sheet_view == "Trainee Details":
             labels={'x': 'Number of Trainees', 'y': 'Workplace'},
             title="Top 10 Workplaces"
         )
+        fig.update_traces(text=workplace_counts.values, textposition='outside')
         st.plotly_chart(fig, use_container_width=True)
     
     # Exam scores analysis (if available)
@@ -584,13 +593,17 @@ else:  # Comparative Analysis
         name='Target',
         x=comparison['البرنامج التدريبي'],
         y=comparison['عدد المستهدفين'],
-        marker_color='lightblue'
+        marker_color='lightblue',
+        text=comparison['عدد المستهدفين'],
+        textposition='outside'
     ))
     fig.add_trace(go.Bar(
         name='Actual',
         x=comparison['البرنامج التدريبي'],
         y=comparison['actual_count'],
-        marker_color='darkblue'
+        marker_color='darkblue',
+        text=comparison['actual_count'],
+        textposition='outside'
     ))
     
     fig.update_layout(
@@ -613,6 +626,7 @@ else:  # Comparative Analysis
         color='fulfillment_rate',
         color_continuous_scale='RdYlGn'
     )
+    fig.update_traces(text=comparison['fulfillment_rate'], textposition='outside')
     fig.update_layout(height=400)
     st.plotly_chart(fig, use_container_width=True)
     
@@ -643,7 +657,9 @@ else:  # Comparative Analysis
             name='مستهدف (Planned)',
             x=courses_gov_comp['المحافظة'],
             y=courses_gov_comp['planned_courses'],
-            marker_color='navy'
+            marker_color='navy',
+            text=courses_gov_comp['planned_courses'],
+            textposition='outside'
         ))
         fig.add_trace(go.Scatter(
             name='فعلي (Actual)',
@@ -669,7 +685,9 @@ else:  # Comparative Analysis
             name='مستهدف (Planned)',
             x=gov_comparison['المحافظة'],
             y=gov_comparison['عدد المستهدفين'],
-            marker_color='navy'
+            marker_color='navy',
+            text=gov_comparison['عدد المستهدفين'],
+            textposition='outside'
         ))
         fig.add_trace(go.Scatter(
             name='فعلي (Actual)',
