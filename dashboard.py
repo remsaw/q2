@@ -171,14 +171,12 @@ if sheet_view == "Overview":
         st.metric("إجمالي البرامج التدريبية", unique_programs)
     
     # Key metrics - Row 2 (Performance Indicators)
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     
     with col1:
         st.metric("معدل النجاح (Success Rate)", f"{success_rate:.1f}%", delta=f"{trainees_passed} ناجح")
     with col2:
         st.metric("معدل الرسوب (Failure Rate)", f"{failure_rate:.1f}%", delta=f"{trainees_failed} راسب")
-    with col3:
-        st.metric("الوسيط (Median Attendance)", f"{median_score:.1f}%")
 
     # Gauges for target vs achieved
     target_sum = plan_df['عدد المستهدفين'].sum()
