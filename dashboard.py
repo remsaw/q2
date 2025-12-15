@@ -67,6 +67,70 @@ except Exception as e:
     st.error(f"❌ Error loading data: {str(e)}")
     st.stop()
 
+# -----------------------------
+# Global filters (sidebar)
+# -----------------------------
+st.sidebar.header("🌐 Global Filters")
+
+# Date range across plan and trainee dates
+plan_start = pd.to_datetime(plan_df.get('بداية الدورة')) if 'بداية الدورة' in plan_df else None
+plan_end = pd.to_datetime(plan_df.get('نهاية الدورة')) if 'نهاية الدورة' in plan_df else None
+trainee_start = pd.to_datetime(trainee_df.get('تاريخ بداية الدورة')) if 'تاريخ بداية الدورة' in trainee_df else None
+trainee_end = pd.to_datetime(trainee_df.get('End')) if 'End' in trainee_df else None
+
+date_series = []
+for s in [plan_start, plan_end, trainee_start, trainee_end]:
+    if s is not None:
+        date_series.append(s)
+
+if date_series:
+    all_dates = pd.concat(date_series).dropna()
+    if len(all_dates) > 0:
+        min_date, max_date = all_dates.min().date(), all_dates.max().date()
+        date_range = st.sidebar.date_input("Date range", value=(min_date, max_date))
+    else:
+        date_range = None
+else:
+    date_range = None
+
+# Governorate and program filters (union of plan + trainee)
+gov_options = sorted(set(plan_df.get('المحافظة', pd.Series(dtype=str)).dropna().unique()).union(
+                      set(trainee_df.get('المحافظة', pd.Series(dtype=str)).dropna().unique())))
+prog_options = sorted(set(plan_df.get('البرنامج التدريبي', pd.Series(dtype=str)).dropna().unique()).union(
+                       set(trainee_df.get('البرنامج التدريبي', pd.Series(dtype=str)).dropna().unique())))
+
+selected_govs = st.sidebar.multiselect("المحافظة", gov_options, default=gov_options)
+selected_programs = st.sidebar.multiselect("البرنامج التدريبي", prog_options, default=prog_options)
+
+# Apply filters to plan_df and trainee_df
+plan_df_filtered = plan_df.copy()
+trainee_df_filtered = trainee_df.copy()
+
+if selected_govs:
+    if 'المحافظة' in plan_df_filtered:
+        plan_df_filtered = plan_df_filtered[plan_df_filtered['المحافظة'].isin(selected_govs)]
+    if 'المحافظة' in trainee_df_filtered:
+        trainee_df_filtered = trainee_df_filtered[trainee_df_filtered['المحافظة'].isin(selected_govs)]
+
+if selected_programs:
+    if 'البرنامج التدريبي' in plan_df_filtered:
+        plan_df_filtered = plan_df_filtered[plan_df_filtered['البرنامج التدريبي'].isin(selected_programs)]
+    if 'البرنامج التدريبي' in trainee_df_filtered:
+        trainee_df_filtered = trainee_df_filtered[trainee_df_filtered['البرنامج التدريبي'].isin(selected_programs)]
+
+if date_range and len(date_range) == 2:
+    start_date, end_date = pd.to_datetime(date_range[0]), pd.to_datetime(date_range[1])
+    if 'بداية الدورة' in plan_df_filtered:
+        plan_df_filtered = plan_df_filtered[(pd.to_datetime(plan_df_filtered['بداية الدورة']) >= start_date) &
+                                            (pd.to_datetime(plan_df_filtered['بداية الدورة']) <= end_date)]
+    if 'تاريخ بداية الدورة' in trainee_df_filtered:
+        trainee_df_filtered = trainee_df_filtered[(pd.to_datetime(trainee_df_filtered['تاريخ بداية الدورة']) >= start_date) &
+                                                  (pd.to_datetime(trainee_df_filtered['تاريخ بداية الدورة']) <= end_date)]
+
+# From here on, use the filtered data
+plan_df = plan_df_filtered
+trainee_df = trainee_df_filtered
+
 # Title
 st.title("📊 Second Quarter Training Dashboard")
 st.markdown("---")
@@ -87,10 +151,11 @@ if sheet_view == "Overview":
     failure_rate = (trainees_failed / total_trainees * 100) if total_trainees > 0 else 0
     avg_score = trainee_df['Attendance'].mean()
     median_score = trainee_df['Attendance'].median()
-    std_dev = trainee_df['Attendance'].std()
+    unique_govs = trainee_df['المحافظة'].nunique()
+    unique_programs = trainee_df['البرنامج التدريبي'].nunique()
     
     # Key metrics - Row 1
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
     
     with col1:
         st.metric("Total Courses", len(plan_df))
@@ -100,18 +165,62 @@ if sheet_view == "Overview":
         st.metric("Target Participants", plan_df['عدد المستهدفين'].sum())
     with col4:
         st.metric("Avg Attendance", f"{avg_score:.1f}%")
+    with col5:
+        st.metric("المحافظات المنفذ بها", unique_govs)
+    with col6:
+        st.metric("إجمالي البرامج التدريبية", unique_programs)
     
     # Key metrics - Row 2 (Performance Indicators)
-    col1, col2, col3, col4, col5 = st.columns(5)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
         st.metric("معدل النجاح (Success Rate)", f"{success_rate:.1f}%", delta=f"{trainees_passed} ناجح")
     with col2:
         st.metric("معدل الرسوب (Failure Rate)", f"{failure_rate:.1f}%", delta=f"{trainees_failed} راسب")
     with col3:
-        st.metric("المتوسط العام (Mean Score)", f"{avg_score:.2f}", delta="نقطة من 100")
-    with col4:
-        st.metric("الانحراف المعياري (Std Dev)", f"{std_dev:.2f}", delta="تشتت الدرجات")
+        st.metric("الوسيط (Median Attendance)", f"{median_score:.1f}%")
+
+    # Gauges for target vs achieved
+    target_sum = plan_df['عدد المستهدفين'].sum()
+    actual_count = len(trainee_df)
+    fulfillment_rate = (actual_count / target_sum * 100) if target_sum > 0 else 0
+    gauge_max = max(target_sum, actual_count, 1) * 1.1
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if target_sum > 0:
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number+delta",
+                value=actual_count,
+                number={'valueformat': ',.0f'},
+                delta={'reference': target_sum, 'valueformat': ',.0f'},
+                title={'text': "المتحقق من إجمالي المستهدف"},
+                gauge={
+                    'axis': {'range': [0, gauge_max]},
+                    'bar': {'color': 'royalblue'},
+                    'threshold': {'line': {'color': 'green', 'width': 4}, 'value': target_sum}
+                }
+            ))
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("لا يوجد مستهدف محدد لعرض المؤشر")
+
+    with col2:
+        fig = go.Figure(go.Indicator(
+            mode="gauge+number+delta",
+            value=fulfillment_rate,
+            number={'suffix': '%', 'valueformat': '.1f'},
+            delta={'reference': 100, 'valueformat': '.1f'},
+            title={'text': "نسبة تحقيق المستهدف"},
+            gauge={
+                'axis': {'range': [0, max(120, fulfillment_rate * 1.1, 1)]},
+                'bar': {'color': 'seagreen'},
+                'threshold': {'line': {'color': 'green', 'width': 4}, 'value': 100},
+                'steps': [{'range': [0, 100], 'color': '#dfeaf4'}]
+            }
+        ))
+        st.plotly_chart(fig, use_container_width=True)
     
     st.markdown("---")
     
@@ -176,6 +285,46 @@ if sheet_view == "Overview":
         fig.update_traces(text=program_performance['success_rate'].round(2), textposition='outside')
         st.plotly_chart(fig, use_container_width=True)
     
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("⬇️ أقل 5 محافظات أداءً (Bottom 5 Governorates)")
+        gov_bottom = gov_performance.sort_values('success_rate', ascending=True).head(5)
+        if len(gov_bottom) > 0:
+            fig = px.bar(
+                gov_bottom,
+                x='success_rate',
+                y='المحافظة',
+                orientation='h',
+                labels={'success_rate': 'معدل النجاح (%)', 'المحافظة': 'المحافظة'},
+                title="أقل 5 محافظات أداءً",
+                color='success_rate',
+                color_continuous_scale='Reds'
+            )
+            fig.update_traces(text=gov_bottom['success_rate'].round(2), textposition='outside')
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("لا توجد بيانات كافية للعرض")
+    
+    with col2:
+        st.subheader("⬇️ أقل 5 برامج أداءً (Bottom 5 Programs)")
+        program_bottom = program_performance.sort_values('success_rate', ascending=True).head(5)
+        if len(program_bottom) > 0:
+            fig = px.bar(
+                program_bottom,
+                x='success_rate',
+                y='البرنامج التدريبي',
+                orientation='h',
+                labels={'success_rate': 'معدل النجاح (%)', 'البرنامج التدريبي': 'البرنامج'},
+                title="أقل 5 برامج أداءً",
+                color='success_rate',
+                color_continuous_scale='Reds'
+            )
+            fig.update_traces(text=program_bottom['success_rate'].round(2), textposition='outside')
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("لا توجد بيانات كافية للعرض")
+    
     st.markdown("---")
     
     # Two column layout
@@ -209,31 +358,76 @@ if sheet_view == "Overview":
     # Full width charts
     col1, col2 = st.columns(2)
     
+    gov_counts_full = trainee_df['المحافظة'].value_counts()
+    
     with col1:
-        st.subheader("📍 Training by Governorate")
-        gov_counts = trainee_df['المحافظة'].value_counts().head(10)
+        st.subheader("📍 عدد المتدربين لكل محافظة - أفضل 10")
+        gov_top10 = gov_counts_full.head(10)
         fig = px.bar(
-            x=gov_counts.index,
-            y=gov_counts.values,
+            x=gov_top10.index,
+            y=gov_top10.values,
             labels={'x': 'Governorate', 'y': 'Number of Trainees'},
             title="Top 10 Governorates by Trainee Count"
         )
-        fig.update_traces(text=gov_counts.values, textposition='outside')
+        fig.update_traces(text=gov_top10.values, textposition='outside')
         fig.update_layout(height=400, showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
-        st.subheader("📅 Course Duration Distribution")
-        duration_counts = trainee_df['عدد أيام الدورة'].value_counts().sort_index()
+        st.subheader("📍 عدد المتدربين لكل محافظة - أسوأ 10")
+        gov_bottom10 = gov_counts_full.sort_values(ascending=True).head(10)
         fig = px.bar(
-            x=duration_counts.index,
-            y=duration_counts.values,
-            labels={'x': 'Course Duration (Days)', 'y': 'Number of Trainees'},
-            title="Distribution of Course Durations"
+            x=gov_bottom10.index,
+            y=gov_bottom10.values,
+            labels={'x': 'Governorate', 'y': 'Number of Trainees'},
+            title="Bottom 10 Governorates by Trainee Count"
         )
-        fig.update_traces(text=duration_counts.values, textposition='outside')
+        fig.update_traces(text=gov_bottom10.values, textposition='outside')
         fig.update_layout(height=400, showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
+    
+    st.subheader("📦 عدد البرامج التدريبية لكل محافظة")
+    programs_per_gov = trainee_df.groupby('المحافظة')['البرنامج التدريبي'].nunique().sort_values(ascending=False)
+    if len(programs_per_gov) > 0:
+        fig = px.bar(
+            x=programs_per_gov.index,
+            y=programs_per_gov.values,
+            labels={'x': 'Governorate', 'y': 'Programs Count'},
+            title="Programs Offered per Governorate"
+        )
+        fig.update_traces(text=programs_per_gov.values, textposition='outside')
+        fig.update_layout(height=400, showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("لا توجد بيانات كافية لعدد البرامج لكل محافظة")
+    
+    st.subheader("📅 Course Duration Distribution")
+    duration_series = trainee_df['عدد أيام الدورة'].dropna()
+    if len(duration_series) > 0:
+        duration_df = pd.DataFrame({'duration_days': duration_series})
+        duration_counts = duration_series.value_counts().sort_index()
+        fig = px.histogram(
+            duration_df,
+            x='duration_days',
+            nbins=min(15, max(5, duration_counts.shape[0])),
+            labels={'duration_days': 'Course Duration (Days)', 'count': 'Number of Trainees'},
+            title="Distribution of Course Durations"
+        )
+        fig.update_traces(texttemplate='%{y}', textposition='outside')
+        fig.update_layout(height=400, showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
+        st.caption(
+            f"الحد الأدنى: {duration_series.min()} يوم | الوسيط: {duration_series.median()} يوم | الحد الأقصى: {duration_series.max()} يوم"
+        )
+    else:
+        st.info("لا تتوفر بيانات كافية لمدة الدورة")
+    
+    with st.expander("عرض كافة المحافظات (عدد المتدربين)"):
+        st.dataframe(
+            gov_counts_full.reset_index(name='عدد المتدربين').rename(columns={'index': 'المحافظة'}),
+            use_container_width=True,
+            height=300
+        )
 
 elif sheet_view == "Training Plan":
     st.header("📋 Training Plan Analysis")
