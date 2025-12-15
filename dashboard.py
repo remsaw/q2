@@ -102,6 +102,26 @@ prog_options = sorted(set(plan_df.get('البرنامج التدريبي', pd.Se
 selected_govs = st.sidebar.multiselect("المحافظة", gov_options, default=gov_options)
 selected_programs = st.sidebar.multiselect("البرنامج التدريبي", prog_options, default=prog_options)
 
+# Numeric sliders
+attendance_min = st.sidebar.slider(
+    "الحد الأدنى للحضور (%)",
+    min_value=0,
+    max_value=100,
+    value=0,
+    help="Filter trainees by minimum attendance percentage"
+)
+
+duration_range = st.sidebar.slider(
+    "مدة الدورة (أيام)",
+    min_value=int(trainee_df['عدد أيام الدورة'].min()) if 'عدد أيام الدورة' in trainee_df.columns and trainee_df['عدد أيام الدورة'].notna().any() else 1,
+    max_value=int(trainee_df['عدد أيام الدورة'].max()) if 'عدد أيام الدورة' in trainee_df.columns and trainee_df['عدد أيام الدورة'].notna().any() else 30,
+    value=(
+        int(trainee_df['عدد أيام الدورة'].min()) if 'عدد أيام الدورة' in trainee_df.columns and trainee_df['عدد أيام الدورة'].notna().any() else 1,
+        int(trainee_df['عدد أيام الدورة'].max()) if 'عدد أيام الدورة' in trainee_df.columns and trainee_df['عدد أيام الدورة'].notna().any() else 30
+    ),
+    help="Filter by course duration range"
+)
+
 # Apply filters to plan_df and trainee_df
 plan_df_filtered = plan_df.copy()
 trainee_df_filtered = trainee_df.copy()
@@ -126,6 +146,17 @@ if date_range and len(date_range) == 2:
     if 'تاريخ بداية الدورة' in trainee_df_filtered:
         trainee_df_filtered = trainee_df_filtered[(pd.to_datetime(trainee_df_filtered['تاريخ بداية الدورة']) >= start_date) &
                                                   (pd.to_datetime(trainee_df_filtered['تاريخ بداية الدورة']) <= end_date)]
+
+# Apply attendance filter
+if 'Attendance' in trainee_df_filtered.columns:
+    trainee_df_filtered = trainee_df_filtered[trainee_df_filtered['Attendance'] >= attendance_min]
+
+# Apply duration filter
+if 'عدد أيام الدورة' in trainee_df_filtered.columns:
+    trainee_df_filtered = trainee_df_filtered[
+        (trainee_df_filtered['عدد أيام الدورة'] >= duration_range[0]) &
+        (trainee_df_filtered['عدد أيام الدورة'] <= duration_range[1])
+    ]
 
 # From here on, use the filtered data
 plan_df = plan_df_filtered
