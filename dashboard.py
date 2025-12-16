@@ -345,6 +345,7 @@ if sheet_view == "Overview":
     with col1:
         st.subheader("📚 Top Training Programs")
         course_counts = trainee_df['البرنامج التدريبي'].value_counts().head(10)
+        max_value = course_counts.max()
         fig = px.bar(
             x=course_counts.values,
             y=course_counts.index,
@@ -356,8 +357,8 @@ if sheet_view == "Overview":
         fig.update_layout(
             height=max(450, len(course_counts) * 45),
             showlegend=False,
-            margin=dict(l=20, r=80, t=40, b=20),
-            xaxis=dict(automargin=True)
+            margin=dict(l=20, r=100, t=40, b=20),
+            xaxis=dict(range=[0, max_value * 1.15])
         )
         st.plotly_chart(fig, use_container_width=True)
     
