@@ -24,6 +24,12 @@ st.markdown("""
         padding: 10px;
         border-radius: 5px;
     }
+    /* Responsive header logo: scales with container, ~20% smaller */
+    .header-logo img {
+        width: 80%; /* 20% smaller than container */
+        height: auto;
+        max-width: 160px; /* cap size for large screens */
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -136,7 +142,13 @@ logo_path = Path(__file__).parent / "assets" / "logo.png"
 col_logo, col_title = st.columns([1, 5])
 with col_logo:
     if logo_path.exists():
-        st.image(str(logo_path), width=150)
+        import base64
+        logo_bytes = logo_path.read_bytes()
+        logo_b64 = base64.b64encode(logo_bytes).decode('utf-8')
+        st.markdown(
+            f'<div class="header-logo"><img src="data:image/png;base64,{logo_b64}" alt="Logo"/></div>',
+            unsafe_allow_html=True
+        )
     else:
         st.caption("Add logo.png to assets for header logo")
 with col_title:
