@@ -485,7 +485,8 @@ elif sheet_view == "Training Plan":
         (plan_df['المحافظة'].isin(selected_gov))
     ]
     
-    col1, col2 = st.columns(2)
+    # Charts with wider space for bars
+    col1, col2 = st.columns([3, 2])
     
     with col1:
         st.subheader("📊 Courses by Department")
@@ -502,6 +503,7 @@ elif sheet_view == "Training Plan":
     with col2:
         st.subheader("🎯 Target Participants by Program")
         program_targets = filtered_plan.groupby('البرنامج التدريبي')['عدد المستهدفين'].sum().sort_values(ascending=False).head(10)
+        max_target = program_targets.max() if len(program_targets) > 0 else 0
         fig = px.bar(
             x=program_targets.values,
             y=program_targets.index,
@@ -509,7 +511,13 @@ elif sheet_view == "Training Plan":
             labels={'x': 'Target Participants', 'y': 'Training Program'},
             title="Top Programs by Target Participants"
         )
-        fig.update_traces(text=program_targets.values, textposition='outside')
+        fig.update_traces(text=program_targets.values, textposition='outside', textfont=dict(size=11))
+        fig.update_layout(
+            height=max(450, len(program_targets) * 45),
+            showlegend=False,
+            margin=dict(l=20, r=100, t=40, b=20),
+            xaxis=dict(range=[0, max_target * 1.15 if max_target else 10])
+        )
         st.plotly_chart(fig, use_container_width=True)
     
     # Timeline
