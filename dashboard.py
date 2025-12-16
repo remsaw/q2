@@ -339,8 +339,8 @@ if sheet_view == "Overview":
     
     st.markdown("---")
     
-    # Two column layout
-    col1, col2 = st.columns(2)
+    # Two column layout with adjusted ratio
+    col1, col2 = st.columns([3, 2])
     
     with col1:
         st.subheader("📚 Top Training Programs")
