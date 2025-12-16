@@ -352,8 +352,13 @@ if sheet_view == "Overview":
             labels={'x': 'Number of Trainees', 'y': 'Training Program'},
             title="Top 10 Training Programs by Enrollment"
         )
-        fig.update_traces(text=course_counts.values, textposition='outside')
-        fig.update_layout(height=400, showlegend=False)
+        fig.update_traces(text=course_counts.values, textposition='outside', textfont=dict(size=11))
+        fig.update_layout(
+            height=max(450, len(course_counts) * 45),
+            showlegend=False,
+            margin=dict(l=20, r=80, t=40, b=20),
+            xaxis=dict(automargin=True)
+        )
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
