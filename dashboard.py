@@ -131,16 +131,18 @@ if date_range and len(date_range) == 2:
 plan_df = plan_df_filtered
 trainee_df = trainee_df_filtered
 
-# Title
-st.title("📊 Second Quarter Training Dashboard")
+# Top banner
 st.markdown(
     """
-    <h2 style="text-align:center; margin-top:0.25rem;">
+    <h2 style="text-align:center; margin-top:0; margin-bottom:0.5rem;">
     Health Information Technology and Statistics Training Center
     </h2>
     """,
     unsafe_allow_html=True,
 )
+
+# Title
+st.title("📊 Second Quarter Training Dashboard")
 st.markdown("---")
 
 # Sidebar filters
