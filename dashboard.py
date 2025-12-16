@@ -136,7 +136,7 @@ logo_path = Path(__file__).parent / "assets" / "logo.png"
 col_logo, col_title = st.columns([1, 5])
 with col_logo:
     if logo_path.exists():
-        st.image(str(logo_path), use_container_width=True)
+        st.image(str(logo_path), width=150)
     else:
         st.caption("Add logo.png to assets for header logo")
 with col_title:
