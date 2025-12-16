@@ -133,7 +133,14 @@ trainee_df = trainee_df_filtered
 
 # Title
 st.title("📊 Second Quarter Training Dashboard")
-st.markdown("**Health Infrmation technolgy and Statstics Training Center**")
+st.markdown(
+    """
+    <h2 style="text-align:center; margin-top:0.25rem;">
+    Health Information Technology and Statistics Training Center
+    </h2>
+    """,
+    unsafe_allow_html=True,
+)
 st.markdown("---")
 
 # Sidebar filters
