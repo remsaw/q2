@@ -131,18 +131,24 @@ if date_range and len(date_range) == 2:
 plan_df = plan_df_filtered
 trainee_df = trainee_df_filtered
 
-# Top banner
-st.markdown(
-    """
-    <h2 style="text-align:center; margin-top:0; margin-bottom:0.5rem;">
-    Health Information Technology and Statistics Training Center
-    </h2>
-    """,
-    unsafe_allow_html=True,
-)
-
-# Title
-st.title("📊 Second Quarter Training Dashboard")
+# Top banner with logo and title
+logo_path = Path(__file__).parent / "assets" / "logo.png"
+col_logo, col_title = st.columns([1, 5])
+with col_logo:
+    if logo_path.exists():
+        st.image(str(logo_path), use_container_width=True)
+    else:
+        st.caption("Add logo.png to assets for header logo")
+with col_title:
+    st.markdown(
+        """
+        <h2 style="text-align:center; margin-top:0; margin-bottom:0.5rem;">
+        Health Information Technology and Statistics Training Center
+        </h2>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.title("📊 Second Quarter Training Dashboard")
 st.markdown("---")
 
 # Sidebar filters
