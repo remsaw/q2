@@ -239,14 +239,13 @@ if sheet_view == "Overview":
                 delta={'reference': 100, 'valueformat': '.1f', 'suffix': '%'},
                 title={'text': f"نسبة تحقيق المستهدف (المتدربين)<br><sub>الفعلي: {actual_count:,} | المستهدف: {target_sum:,}</sub>"},
                 gauge={
-                    'axis': {'range': [0, max(120, fulfillment_rate * 1.1)]},
+                    'axis': {'range': [0, 100]},
                     'bar': {'color': 'seagreen'},
                     'threshold': {'line': {'color': 'green', 'width': 4}, 'value': 100},
                     'steps': [
                         {'range': [0, 50], 'color': '#ffe6e6'},
                         {'range': [50, 80], 'color': '#fff4e6'},
-                        {'range': [80, 100], 'color': '#e6f3ff'},
-                        {'range': [100, max(120, fulfillment_rate * 1.1)], 'color': '#e6ffe6'}
+                        {'range': [80, 100], 'color': '#e6f3ff'}
                     ]
                 }
             ))
@@ -264,14 +263,13 @@ if sheet_view == "Overview":
                 delta={'reference': 100, 'valueformat': '.1f', 'suffix': '%'},
                 title={'text': f"نسبة تنفيذ البرامج التدريبية<br><sub>الفعلي: {actual_programs} | المخطط: {target_programs}</sub>"},
                 gauge={
-                    'axis': {'range': [0, max(120, programs_rate * 1.1)]},
+                    'axis': {'range': [0, 100]},
                     'bar': {'color': 'royalblue'},
                     'threshold': {'line': {'color': 'green', 'width': 4}, 'value': 100},
                     'steps': [
                         {'range': [0, 50], 'color': '#ffe6e6'},
                         {'range': [50, 80], 'color': '#fff4e6'},
-                        {'range': [80, 100], 'color': '#e6f3ff'},
-                        {'range': [100, max(120, programs_rate * 1.1)], 'color': '#e6ffe6'}
+                        {'range': [80, 100], 'color': '#e6f3ff'}
                     ]
                 }
             ))
