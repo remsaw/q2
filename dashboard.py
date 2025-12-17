@@ -30,6 +30,17 @@ st.markdown("""
         height: auto;
         max-width: 160px; /* cap size for large screens */
     }
+    .center-title {
+        color: #0a4a6e;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+    .center-subtitle {
+        color: #d35400;
+        font-weight: 600;
+        font-size: 1.05rem;
+        margin-top: 0.15rem;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -154,9 +165,10 @@ with col_logo:
 with col_title:
     st.markdown(
         """
-        <h2 style="text-align:center; margin-top:0; margin-bottom:0.5rem;">
-        Health Information Technology and Statistics Training Center
-        </h2>
+        <div style="text-align:center; margin-top:0; margin-bottom:0.5rem;">
+            <div class="center-title">Health Information Technology and Statistics Training Center</div>
+            <div class="center-subtitle">Learn Today, Lead Tomorrow</div>
+        </div>
         """,
         unsafe_allow_html=True,
     )
@@ -485,22 +497,10 @@ elif sheet_view == "Training Plan":
         (plan_df['المحافظة'].isin(selected_gov))
     ]
     
-    # Charts with wider space for bars
-    col1, col2 = st.columns([3, 2])
-    
-    with col1:
-        st.subheader("📊 Courses by Department")
-        dept_dist = filtered_plan['الإدارة'].value_counts()
-        fig = px.bar(
-            x=dept_dist.index,
-            y=dept_dist.values,
-            labels={'x': 'Department', 'y': 'Number of Courses'},
-            title="Course Distribution by Department"
-        )
-        fig.update_traces(text=dept_dist.values, textposition='outside')
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
+    # Charts with wider space for bars; put targets on the left with more width
+    col_target, col_courses = st.columns([3, 2])
+
+    with col_target:
         st.subheader("🎯 Target Participants by Program")
         program_targets = filtered_plan.groupby('البرنامج التدريبي')['عدد المستهدفين'].sum().sort_values(ascending=False).head(10)
         max_target = program_targets.max() if len(program_targets) > 0 else 0
@@ -518,6 +518,18 @@ elif sheet_view == "Training Plan":
             margin=dict(l=20, r=100, t=40, b=20),
             xaxis=dict(range=[0, max_target * 1.15 if max_target else 10])
         )
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with col_courses:
+        st.subheader("📊 Courses by Department")
+        dept_dist = filtered_plan['الإدارة'].value_counts()
+        fig = px.bar(
+            x=dept_dist.index,
+            y=dept_dist.values,
+            labels={'x': 'Department', 'y': 'Number of Courses'},
+            title="Course Distribution by Department"
+        )
+        fig.update_traces(text=dept_dist.values, textposition='outside')
         st.plotly_chart(fig, use_container_width=True)
     
     # Timeline
