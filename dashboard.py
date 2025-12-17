@@ -34,12 +34,13 @@ st.markdown("""
         color: #0a4a6e;
         font-weight: 700;
         letter-spacing: 0.3px;
+        font-size: 2.5rem;
     }
     .center-subtitle {
         color: #d35400;
         font-weight: 600;
-        font-size: 1.05rem;
-        margin-top: 0.15rem;
+        font-size: 1.8rem;
+        margin-top: 0.25rem;
     }
     </style>
     """, unsafe_allow_html=True)
