@@ -53,8 +53,10 @@ def load_data(file_path):
     registration_df = pd.read_excel(file_path, sheet_name='تسجيل المتدربين')
     return programs_df, trainees_df, registration_df
 
-# Default file path
-default_file = Path(r"c:\Q2\second quarter.xlsx")
+# Default file path - use relative path for deployment compatibility
+import os
+script_dir = Path(__file__).parent if '__file__' in globals() else Path.cwd()
+default_file = script_dir / "second quarter.xlsx"
 
 # File uploader in sidebar
 st.sidebar.header("📁 Data Source")
