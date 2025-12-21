@@ -120,93 +120,129 @@ sheet_view = st.sidebar.radio("Select View", ["Overview", "Programs", "Trainees"
 if sheet_view == "Overview":
     st.header("📈 Overview Statistics")
     
-    # Key metrics
-    col1, col2, col3, col4 = st.columns(4)
+    # Calculate key metrics
+    num_governorates = registration_df['المحافظة'].nunique()
+    unique_programs = registration_df['البرنامج التدريبي'].nunique()
+    total_courses = registration_df['البرنامج التدريبي ID'].nunique()
+    actual_trainees = len(trainees_df)
+    
+    # Get target from programs sheet
+    target_trainees = registration_df['عدد المستهدفين'].sum() if 'عدد المستهدفين' in registration_df.columns else 0
+    
+    # Key metrics row
+    col1, col2, col3, col4, col5 = st.columns(5)
     
     with col1:
-        st.metric("Total Programs", len(programs_df))
+        st.metric("عدد المحافظات", num_governorates)
     with col2:
-        st.metric("Total Trainees", len(trainees_df))
+        st.metric("عدد البرامج", unique_programs)
     with col3:
-        st.metric("Total Registrations", len(registration_df))
+        st.metric("عدد الدورات", total_courses)
     with col4:
-        avg_attendance = pd.to_numeric(registration_df['Attendance'], errors='coerce').mean()
-        st.metric("Avg Attendance", f"{avg_attendance:.1f}%")
+        st.metric("عدد المتدربين الفعلي", actual_trainees)
+    with col5:
+        st.metric("عدد المتدربين المستهدف", int(target_trainees))
     
-    # Performance Indicators
-    passing_threshold = 60
-    registrations_passed = (pd.to_numeric(registration_df['Attendance'], errors='coerce') >= passing_threshold).sum()
-    registrations_failed = (pd.to_numeric(registration_df['Attendance'], errors='coerce') < passing_threshold).sum()
+    st.markdown("---")
+    
+    # Gauge charts for KPIs
+    col1, col2, col3 = st.columns(3)
+    
+    # Gauge 1: Programs Target Achievement
+    with col1:
+        target_programs = 13  # From image
+        programs_delta = unique_programs - target_programs
+        programs_pct = (unique_programs / target_programs * 100) if target_programs > 0 else 0
+        
+        fig = go.Figure(go.Indicator(
+            mode="gauge+number+delta",
+            value=unique_programs,
+            number={'suffix': '', 'valueformat': 'd'},
+            delta={'reference': target_programs, 'valueformat': 'd', 'suffix': f' {programs_delta:+.0f}'},
+            title={'text': f"عدد البرامج التدريبية من المستهدف<br><sub>Goal: {target_programs}</sub>"},
+            gauge={
+                'axis': {'range': [0, 15]},
+                'bar': {'color': 'seagreen'},
+                'steps': [
+                    {'range': [0, 7], 'color': '#ffe6e6'},
+                    {'range': [7, 11], 'color': '#fff4e6'},
+                    {'range': [11, 15], 'color': '#e6f3ff'}
+                ]
+            }
+        ))
+        fig.update_layout(height=350)
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # Gauge 2: Courses Target Achievement
+    with col2:
+        target_courses = 110  # From image
+        courses_delta = total_courses - target_courses
+        courses_pct = (total_courses / target_courses * 100) if target_courses > 0 else 0
+        
+        fig = go.Figure(go.Indicator(
+            mode="gauge+number+delta",
+            value=total_courses,
+            number={'suffix': '', 'valueformat': 'd'},
+            delta={'reference': target_courses, 'valueformat': 'd', 'suffix': f' {courses_delta:+.0f}'},
+            title={'text': f"عدد الدورات التدريبية الفعلي من المستهدف<br><sub>Goal: {target_courses}</sub>"},
+            gauge={
+                'axis': {'range': [0, 130]},
+                'bar': {'color': 'royalblue'},
+                'steps': [
+                    {'range': [0, 55], 'color': '#ffe6e6'},
+                    {'range': [55, 88], 'color': '#fff4e6'},
+                    {'range': [88, 130], 'color': '#e6f3ff'}
+                ]
+            }
+        ))
+        fig.update_layout(height=350)
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # Gauge 3: Trainees Fulfillment
+    with col3:
+        trainees_pct = (actual_trainees / target_trainees * 100) if target_trainees > 0 else 0
+        trainees_delta = actual_trainees - target_trainees
+        
+        fig = go.Figure(go.Indicator(
+            mode="gauge+number+delta",
+            value=trainees_pct,
+            number={'suffix': '%', 'valueformat': '.2f'},
+            delta={'reference': 100, 'valueformat': '.2f', 'suffix': '%'},
+            title={'text': f"عدد المتدربين الفعلي من المستهدف<br><sub>الفعلي: {actual_trainees:,} | المستهدف: {int(target_trainees):,}</sub>"},
+            gauge={
+                'axis': {'range': [0, 100]},
+                'bar': {'color': 'orange'},
+                'threshold': {'line': {'color': 'green', 'width': 4}, 'value': 100},
+                'steps': [
+                    {'range': [0, 50], 'color': '#ffe6e6'},
+                    {'range': [50, 80], 'color': '#fff4e6'},
+                    {'range': [80, 100], 'color': '#e6f3ff'}
+                ]
+            }
+        ))
+        fig.update_layout(height=350)
+        st.plotly_chart(fig, use_container_width=True)
+    
+    st.markdown("---")
+    
+    # Exam Success Rates
+    col1, col2, col3 = st.columns(3)
+    
+    # Calculate exam success rates
+    initial_exam_pass = (pd.to_numeric(registration_df['نتيجة الإمتحان المبدئي'], errors='coerce') == 1).sum()
+    final_exam_pass = (pd.to_numeric(registration_df['نتيجة الإمتحان النهائي'], errors='coerce') == 1).sum()
     total_registrations = len(registration_df)
-    success_rate = (registrations_passed / total_registrations * 100) if total_registrations > 0 else 0
-    failure_rate = (registrations_failed / total_registrations * 100) if total_registrations > 0 else 0
     
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.metric("معدل النجاح (Success Rate)", f"{success_rate:.1f}%", delta=f"{registrations_passed} ناجح")
-    with col2:
-        st.metric("معدل الرسوب (Failure Rate)", f"{failure_rate:.1f}%", delta=f"{registrations_failed} راسب")
-    
-    # Gauges for target vs achieved
-    planned_capacity = len(programs_df) * 17.75
-    actual_registrations = len(registration_df)
-    fulfillment_rate = (actual_registrations / planned_capacity * 100) if planned_capacity > 0 else 0
-    
-    target_programs = programs_df['البرنامج التدريبي'].nunique()
-    actual_programs = registration_df['البرنامج التدريبي'].nunique()
-    programs_rate = (actual_programs / target_programs * 100) if target_programs > 0 else 0
-
-    col1, col2 = st.columns(2)
+    initial_success_rate = (initial_exam_pass / total_registrations * 100) if total_registrations > 0 else 0
+    final_success_rate = (final_exam_pass / total_registrations * 100) if total_registrations > 0 else 0
+    avg_success_rate = (initial_success_rate + final_success_rate) / 2
     
     with col1:
-        if planned_capacity > 0:
-            fig = go.Figure(go.Indicator(
-                mode="gauge+number+delta",
-                value=fulfillment_rate,
-                number={'suffix': '%', 'valueformat': '.1f'},
-                delta={'reference': 100, 'valueformat': '.1f', 'suffix': '%'},
-                title={'text': f"نسبة تحقيق المستهدف (التسجيلات)<br><sub>الفعلي: {actual_registrations:,} | المستهدف: {int(planned_capacity):,}</sub>"},
-                gauge={
-                    'axis': {'range': [0, 150]},
-                    'bar': {'color': 'seagreen'},
-                    'threshold': {'line': {'color': 'green', 'width': 4}, 'value': 100},
-                    'steps': [
-                        {'range': [0, 50], 'color': '#ffe6e6'},
-                        {'range': [50, 80], 'color': '#fff4e6'},
-                        {'range': [80, 100], 'color': '#e6f3ff'},
-                        {'range': [100, 150], 'color': '#d4edda'}
-                    ]
-                }
-            ))
-            fig.update_layout(height=400)
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("لا يوجد مستهدف محدد لعرض المؤشر")
-    
+        st.metric("متوسط النجاح في الإمتحان", f"{avg_success_rate:.2f}%")
     with col2:
-        if target_programs > 0:
-            fig = go.Figure(go.Indicator(
-                mode="gauge+number+delta",
-                value=programs_rate,
-                number={'suffix': '%', 'valueformat': '.1f'},
-                delta={'reference': 100, 'valueformat': '.1f', 'suffix': '%'},
-                title={'text': f"نسبة تنفيذ البرامج التدريبية<br><sub>الفعلي: {actual_programs} | المخطط: {target_programs}</sub>"},
-                gauge={
-                    'axis': {'range': [0, 100]},
-                    'bar': {'color': 'royalblue'},
-                    'threshold': {'line': {'color': 'green', 'width': 4}, 'value': 100},
-                    'steps': [
-                        {'range': [0, 50], 'color': '#ffe6e6'},
-                        {'range': [50, 80], 'color': '#fff4e6'},
-                        {'range': [80, 100], 'color': '#e6f3ff'}
-                    ]
-                }
-            ))
-            fig.update_layout(height=400)
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("لا توجد برامج مخططة لعرض المؤشر")
+        st.metric("نسبة نجاح الإمتحان البدائي", f"{initial_success_rate:.2f}%")
+    with col3:
+        st.metric("نسبة نجاح الإمتحان النهائي", f"{final_success_rate:.2f}%")
     
     st.markdown("---")
     
