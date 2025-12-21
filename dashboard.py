@@ -81,6 +81,15 @@ try:
     plan_df, trainee_df = load_data(file_to_use)
     st.sidebar.success("✅ Data loaded successfully!")
     st.sidebar.metric("Last Updated", pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"))
+    # Helpers to safely access columns after source updates
+    def _safe_sum(df: pd.DataFrame, col: str) -> float:
+        return float(df[col].sum()) if col in df.columns else 0.0
+    def _safe_mean(df: pd.DataFrame, col: str) -> float:
+        return float(df[col].mean()) if col in df.columns and pd.api.types.is_numeric_dtype(df[col]) else 0.0
+    def _safe_nunique(df: pd.DataFrame, col: str) -> int:
+        return int(df[col].nunique()) if col in df.columns else 0
+    def _has(df: pd.DataFrame, cols: list) -> bool:
+        return all(c in df.columns for c in cols)
 except Exception as e:
     st.error(f"❌ Error loading data: {str(e)}")
     st.stop()
@@ -163,9 +172,12 @@ with col_logo:
         )
     else:
         st.caption("Add logo.png to assets for header logo")
-with col_title:
-    st.markdown(
-        """
+    with col2:
+        st.subheader("🎯 Target Participants by Program")
+        if _has(filtered_plan, ['البرنامج التدريبي', 'عدد المستهدفين']):
+            program_targets = filtered_plan.groupby('البرنامج التدريبي')['عدد المستهدفين'].sum().sort_values(ascending=False).head(10)
+        else:
+            program_targets = pd.Series(dtype=float)
         <div style="text-align:center; margin-top:0; margin-bottom:0.5rem;">
             <div class="center-title">Health Information Technology and Statistics Training Center</div>
             <div class="center-subtitle">Learn Today, Lead Tomorrow</div>
@@ -190,10 +202,10 @@ if sheet_view == "Overview":
     total_trainees = len(trainee_df)
     success_rate = (trainees_passed / total_trainees * 100) if total_trainees > 0 else 0
     failure_rate = (trainees_failed / total_trainees * 100) if total_trainees > 0 else 0
-    avg_score = trainee_df['Attendance'].mean()
-    median_score = trainee_df['Attendance'].median()
-    unique_govs = trainee_df['المحافظة'].nunique()
-    unique_programs = trainee_df['البرنامج التدريبي'].nunique()
+    avg_score = trainee_df['Attendance'].mean() if 'Attendance' in trainee_df.columns else 0
+    median_score = trainee_df['Attendance'].median() if 'Attendance' in trainee_df.columns else 0
+    unique_govs = _safe_nunique(trainee_df, 'المحافظة')
+    unique_programs = _safe_nunique(trainee_df, 'البرنامج التدريبي')
     
     # Key metrics - Row 1
     col1, col2, col3, col4, col5, col6 = st.columns(6)
@@ -203,7 +215,7 @@ if sheet_view == "Overview":
     with col2:
         st.metric("Total Trainees", len(trainee_df))
     with col3:
-        st.metric("Target Participants", plan_df['عدد المستهدفين'].sum())
+        st.metric("Target Participants", _safe_sum(plan_df, 'عدد المستهدفين'))
     with col4:
         st.metric("Avg Attendance", f"{avg_score:.1f}%")
     with col5:
@@ -220,11 +232,11 @@ if sheet_view == "Overview":
         st.metric("معدل الرسوب (Failure Rate)", f"{failure_rate:.1f}%", delta=f"{trainees_failed} راسب")
 
     # Gauges for target vs achieved
-    target_sum = plan_df['عدد المستهدفين'].sum()
+    target_sum = _safe_sum(plan_df, 'عدد المستهدفين')
     actual_count = len(trainee_df)
     fulfillment_rate = (actual_count / target_sum * 100) if target_sum > 0 else 0
     
-    target_programs = plan_df['البرنامج التدريبي'].nunique()
+    target_programs = _safe_nunique(plan_df, 'البرنامج التدريبي')
     actual_programs = trainee_df['البرنامج التدريبي'].nunique()
     programs_rate = (actual_programs / target_programs * 100) if target_programs > 0 else 0
 
@@ -387,7 +399,7 @@ if sheet_view == "Overview":
     # Full width charts
     col1, col2 = st.columns(2)
     
-    gov_counts_full = trainee_df['المحافظة'].value_counts()
+    gov_counts_full = trainee_df['المحافظة'].value_counts() if 'المحافظة' in trainee_df.columns else pd.Series(dtype=int)
     
     with col1:
         st.subheader("📍 عدد المتدربين لكل محافظة - أفضل 10")
@@ -807,8 +819,8 @@ else:  # Comparative Analysis
     st.subheader("📚 Program-wise Comparison")
     
     # Aggregate by program
-    plan_by_program = plan_df.groupby('البرنامج التدريبي')['عدد المستهدفين'].sum().reset_index()
-    actual_by_program = trainee_df.groupby('البرنامج التدريبي').size().reset_index(name='actual_count')
+    plan_by_program = plan_df.groupby('البرنامج التدريبي')['عدد المستهدفين'].sum().reset_index() if _has(plan_df, ['البرنامج التدريبي', 'عدد المستهدفين']) else pd.DataFrame(columns=['البرنامج التدريبي','عدد المستهدفين'])
+    actual_by_program = trainee_df.groupby('البرنامج التدريبي').size().reset_index(name='actual_count') if 'البرنامج التدريبي' in trainee_df.columns else pd.DataFrame(columns=['البرنامج التدريبي','actual_count'])
     
     comparison = plan_by_program.merge(
         actual_by_program, 
