@@ -84,7 +84,7 @@ except Exception as e:
     st.stop()
 
 # Top banner with logo and title
-logo_path = Path(r"c:\Q2\assets\logo.png")
+logo_path = script_dir / "assets" / "logo.png"
 col_logo, col_title = st.columns([1, 5])
 with col_logo:
     if logo_path.exists():
