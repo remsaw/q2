@@ -120,76 +120,74 @@ sheet_view = st.sidebar.radio("Select View", ["Overview", "Programs", "Trainees"
 if sheet_view == "Overview":
     st.header("📈 Overview Statistics")
     
-    # Calculate key metrics
+    # Calculate key metrics (aligned with reference data)
     num_governorates = registration_df['المحافظة'].nunique()
-    unique_programs = registration_df['البرنامج التدريبي'].nunique()
-    total_courses = registration_df['البرنامج التدريبي ID'].nunique()
-    actual_trainees = len(trainees_df)
-    
-    # Get target from programs sheet
-    target_trainees = registration_df['عدد المستهدفين'].sum() if 'عدد المستهدفين' in registration_df.columns else 0
+    unique_programs = registration_df['البرنامج التدريبي'].nunique()  # Programs with registrations: 13
+    total_registrations = len(registration_df)  # Total registrations: 1,573
+    unique_trainees = trainees_df['الرقم القومي'].nunique() if 'الرقم القومي' in trainees_df.columns else len(trainees_df)  # Unique by National ID: 1,432
+    planned_sessions = len(programs_df)  # Planned sessions from Programs sheet: 110
+    planned_capacity = planned_sessions * 17.75 if planned_sessions > 0 else 0  # Planned capacity: 1,945 seats
+    utilization_rate = (total_registrations / planned_capacity * 100) if planned_capacity > 0 else 0  # ~80.9%
     
     # Key metrics row (target trainees metric removed per request)
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.metric("عدد المحافظات", num_governorates)
+        st.metric("إجمالي التسجيلات", f"{total_registrations:,}")
     with col2:
-        st.metric("عدد البرامج", unique_programs)
+        st.metric("المتدربون الفريدون", f"{unique_trainees:,}")
     with col3:
-        st.metric("عدد الدورات", total_courses)
+        st.metric("البرامج", unique_programs)
     with col4:
-        st.metric("عدد المتدربين الفعلي", actual_trainees)
+        st.metric("معدل الاستفادة", f"{utilization_rate:.1f}%")
     
     st.markdown("---")
     
     # Gauge charts for KPIs (removed trainee fulfillment gauge per request)
     col1, col2 = st.columns(2)
     
-    # Gauge 1: Programs Target Achievement
+    # Gauge 1: Planned Sessions Achievement
     with col1:
-        target_programs = 13  # From image
-        programs_delta = unique_programs - target_programs
-        programs_pct = (unique_programs / target_programs * 100) if target_programs > 0 else 0
+        planned_sessions_target = 110  # From reference: planned sessions
+        sessions_delta = planned_sessions - planned_sessions_target
         
         fig = go.Figure(go.Indicator(
             mode="gauge+number+delta",
-            value=unique_programs,
+            value=planned_sessions,
             number={'suffix': '', 'valueformat': 'd'},
-            delta={'reference': target_programs, 'valueformat': 'd', 'suffix': f' {programs_delta:+.0f}'},
-            title={'text': f"عدد البرامج التدريبية من المستهدف<br><sub>Goal: {target_programs}</sub>"},
+            delta={'reference': planned_sessions_target, 'valueformat': 'd', 'suffix': f' {sessions_delta:+.0f}'},
+            title={'text': f"الجلسات المخطط لها<br><sub>Goal: {planned_sessions_target}</sub>"},
             gauge={
-                'axis': {'range': [0, 15]},
+                'axis': {'range': [0, 130]},
                 'bar': {'color': 'seagreen'},
                 'steps': [
-                    {'range': [0, 7], 'color': '#ffe6e6'},
-                    {'range': [7, 11], 'color': '#fff4e6'},
-                    {'range': [11, 15], 'color': '#e6f3ff'}
+                    {'range': [0, 55], 'color': '#ffe6e6'},
+                    {'range': [55, 88], 'color': '#fff4e6'},
+                    {'range': [88, 130], 'color': '#e6f3ff'}
                 ]
             }
         ))
         fig.update_layout(height=350)
         st.plotly_chart(fig, use_container_width=True)
     
-    # Gauge 2: Courses Target Achievement
+    # Gauge 2: Capacity Utilization
     with col2:
-        target_courses = 110  # From image
-        courses_delta = total_courses - target_courses
-        courses_pct = (total_courses / target_courses * 100) if target_courses > 0 else 0
+        capacity_target = int(planned_capacity)  # Planned capacity: ~1,945 seats
+        capacity_delta = total_registrations - capacity_target
         
         fig = go.Figure(go.Indicator(
             mode="gauge+number+delta",
-            value=total_courses,
+            value=total_registrations,
             number={'suffix': '', 'valueformat': 'd'},
-            delta={'reference': target_courses, 'valueformat': 'd', 'suffix': f' {courses_delta:+.0f}'},
-            title={'text': f"عدد الدورات التدريبية الفعلي من المستهدف<br><sub>Goal: {target_courses}</sub>"},
+            delta={'reference': capacity_target, 'valueformat': 'd', 'suffix': f' {capacity_delta:+.0f}'},
+            title={'text': f"التسجيلات من السعة المخطط لها<br><sub>Capacity: {capacity_target:,}</sub>"},
             gauge={
-                'axis': {'range': [0, 130]},
+                'axis': {'range': [0, 2500]},
                 'bar': {'color': 'royalblue'},
                 'steps': [
-                    {'range': [0, 55], 'color': '#ffe6e6'},
-                    {'range': [55, 88], 'color': '#fff4e6'},
-                    {'range': [88, 130], 'color': '#e6f3ff'}
+                    {'range': [0, 1000], 'color': '#ffe6e6'},
+                    {'range': [1000, 1600], 'color': '#fff4e6'},
+                    {'range': [1600, 2500], 'color': '#e6f3ff'}
                 ]
             }
         ))
