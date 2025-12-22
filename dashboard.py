@@ -129,8 +129,8 @@ if sheet_view == "Overview":
     # Get target from programs sheet
     target_trainees = registration_df['عدد المستهدفين'].sum() if 'عدد المستهدفين' in registration_df.columns else 0
     
-    # Key metrics row
-    col1, col2, col3, col4, col5 = st.columns(5)
+    # Key metrics row (target trainees metric removed per request)
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.metric("عدد المحافظات", num_governorates)
@@ -140,8 +140,6 @@ if sheet_view == "Overview":
         st.metric("عدد الدورات", total_courses)
     with col4:
         st.metric("عدد المتدربين الفعلي", actual_trainees)
-    with col5:
-        st.metric("عدد المتدربين المستهدف", int(target_trainees))
     
     st.markdown("---")
     
