@@ -143,8 +143,8 @@ if sheet_view == "Overview":
     
     st.markdown("---")
     
-    # Gauge charts for KPIs
-    col1, col2, col3 = st.columns(3)
+    # Gauge charts for KPIs (removed trainee fulfillment gauge per request)
+    col1, col2 = st.columns(2)
     
     # Gauge 1: Programs Target Achievement
     with col1:
@@ -196,30 +196,6 @@ if sheet_view == "Overview":
         fig.update_layout(height=350)
         st.plotly_chart(fig, use_container_width=True)
     
-    # Gauge 3: Trainees Fulfillment
-    with col3:
-        trainees_pct = (actual_trainees / target_trainees * 100) if target_trainees > 0 else 0
-        trainees_delta = actual_trainees - target_trainees
-        
-        fig = go.Figure(go.Indicator(
-            mode="gauge+number+delta",
-            value=trainees_pct,
-            number={'suffix': '%', 'valueformat': '.2f'},
-            delta={'reference': 100, 'valueformat': '.2f', 'suffix': '%'},
-            title={'text': f"عدد المتدربين الفعلي من المستهدف<br><sub>الفعلي: {actual_trainees:,} | المستهدف: {int(target_trainees):,}</sub>"},
-            gauge={
-                'axis': {'range': [0, 100]},
-                'bar': {'color': 'orange'},
-                'threshold': {'line': {'color': 'green', 'width': 4}, 'value': 100},
-                'steps': [
-                    {'range': [0, 50], 'color': '#ffe6e6'},
-                    {'range': [50, 80], 'color': '#fff4e6'},
-                    {'range': [80, 100], 'color': '#e6f3ff'}
-                ]
-            }
-        ))
-        fig.update_layout(height=350)
-        st.plotly_chart(fig, use_container_width=True)
     
     st.markdown("---")
     
