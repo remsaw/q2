@@ -202,29 +202,37 @@ if sheet_view == "Overview":
     # Exam Success Rates KPIs (mirroring provided design)
     col1, col2, col3 = st.columns(3)
 
-    # Calculate exam success rates with tolerant parsing (handles numbers, %, Arabic/English pass labels)
-    def _pass_rate(series):
+    # Calculate exam success rates using adaptive logic (0/1 labels or numeric percentages)
+    def _success_rate(series):
         if series is None:
-            return 0.0, 0, 0
-        # Normalize strings
-        s = series.astype(str).str.strip().str.replace('%', '', regex=False).str.replace(',', '.', regex=False).str.lower()
-        # Textual pass labels
-        text_pass = s.isin(['1', 'pass', 'passed', 'ناجح', 'نجاح', 'true', 'yes'])
-        # Numeric pass (>=60)
-        nums = pd.to_numeric(s, errors='coerce')
-        num_pass = nums >= 60
-        success_mask = text_pass | num_pass
-        total = success_mask.notna().sum()
-        success_count = success_mask.sum()
-        return (success_count / total * 100) if total > 0 else 0.0, success_count, total
+            return 0.0
+        s = series.dropna()
+        if s.empty:
+            return 0.0
+        s_clean = s.astype(str).str.strip().str.replace('%', '', regex=False).str.replace(',', '.', regex=False)
+        # Try numeric first
+        nums = pd.to_numeric(s_clean, errors='coerce')
+        numeric_ratio = nums.notna().mean()
+        if numeric_ratio >= 0.5:
+            # If looks like 0/1 data, treat 1 as pass; otherwise use >=60
+            if nums.max() <= 1.05:
+                pass_mask = nums == 1
+            else:
+                pass_mask = nums >= 60
+        else:
+            # Textual pass labels
+            lower = s_clean.str.lower()
+            pass_labels = ['pass', 'passed', 'ناجح', 'نجاح', 'true', 'yes', '1']
+            pass_mask = lower.isin(pass_labels)
+        return float(pass_mask.mean() * 100)
 
-    initial_success_rate, initial_success_count, initial_total = _pass_rate(registration_df.get('نتيجة الإمتحان المبدئي'))
-    final_success_rate, final_success_count, final_total = _pass_rate(registration_df.get('نتيجة الإمتحان النهائي'))
+    initial_success_rate = _success_rate(registration_df.get('نتيجة الإمتحان المبدئي'))
+    final_success_rate = _success_rate(registration_df.get('نتيجة الإمتحان النهائي'))
 
     # Average of numeric final exam scores if available; fallback to final success rate
     final_exam_scores = pd.to_numeric(registration_df.get('الامتحان النهائي'), errors='coerce')
     avg_final_exam_success = (
-        final_exam_scores.mean()
+        float(final_exam_scores.mean())
         if final_exam_scores.notna().sum() > 0
         else final_success_rate
     )
