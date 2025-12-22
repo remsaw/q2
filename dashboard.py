@@ -202,19 +202,30 @@ if sheet_view == "Overview":
     # Exam Success Rates KPIs (mirroring provided design)
     col1, col2, col3 = st.columns(3)
 
-    # Calculate exam success rates
-    initial_exam_pass = (pd.to_numeric(registration_df['نتيجة الإمتحان المبدئي'], errors='coerce') == 1).sum()
-    final_exam_pass = (pd.to_numeric(registration_df['نتيجة الإمتحان النهائي'], errors='coerce') == 1).sum()
-    total_registrations = len(registration_df)
+    # Calculate exam success rates with tolerant parsing (handles numbers, %, Arabic/English pass labels)
+    def _pass_rate(series):
+        if series is None:
+            return 0.0, 0, 0
+        # Normalize strings
+        s = series.astype(str).str.strip().str.replace('%', '', regex=False).str.replace(',', '.', regex=False).str.lower()
+        # Textual pass labels
+        text_pass = s.isin(['1', 'pass', 'passed', 'ناجح', 'نجاح', 'true', 'yes'])
+        # Numeric pass (>=60)
+        nums = pd.to_numeric(s, errors='coerce')
+        num_pass = nums >= 60
+        success_mask = text_pass | num_pass
+        total = success_mask.notna().sum()
+        success_count = success_mask.sum()
+        return (success_count / total * 100) if total > 0 else 0.0, success_count, total
 
-    initial_success_rate = (initial_exam_pass / total_registrations * 100) if total_registrations > 0 else 0
-    final_success_rate = (final_exam_pass / total_registrations * 100) if total_registrations > 0 else 0
+    initial_success_rate, initial_success_count, initial_total = _pass_rate(registration_df.get('نتيجة الإمتحان المبدئي'))
+    final_success_rate, final_success_count, final_total = _pass_rate(registration_df.get('نتيجة الإمتحان النهائي'))
 
-    # Average of final exam scores when available; fallback to final success rate
+    # Average of numeric final exam scores if available; fallback to final success rate
     final_exam_scores = pd.to_numeric(registration_df.get('الامتحان النهائي'), errors='coerce')
     avg_final_exam_success = (
         final_exam_scores.mean()
-        if not final_exam_scores.empty and pd.notna(final_exam_scores.mean())
+        if final_exam_scores.notna().sum() > 0
         else final_success_rate
     )
 
