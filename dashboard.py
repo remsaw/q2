@@ -259,6 +259,7 @@ if sheet_view == "Overview":
             labels={'x': 'Registrations', 'y': 'Program'},
             title="Top 10 Training Programs"
         )
+        fig.update_traces(text=program_counts.values, textposition='outside')
         fig.update_layout(height=400, showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
     
@@ -270,6 +271,7 @@ if sheet_view == "Overview":
             names=location_counts.index,
             title="Programs by Location"
         )
+        fig.update_traces(textinfo="label+percent+value")
         fig.update_layout(height=400)
         st.plotly_chart(fig, use_container_width=True)
     
@@ -285,6 +287,7 @@ if sheet_view == "Overview":
             labels={'x': 'Governorate', 'y': 'Registrations'},
             title="Top 10 Governorates"
         )
+        fig.update_traces(text=gov_counts.values, textposition='outside')
         fig.update_layout(height=400, showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
     
@@ -297,6 +300,7 @@ if sheet_view == "Overview":
             labels={'x': 'Course Duration (Days)', 'y': 'Registrations'},
             title="Distribution of Course Durations"
         )
+        fig.update_traces(text=duration_counts.values, textposition='outside')
         fig.update_layout(height=400, showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
 
@@ -343,6 +347,7 @@ elif sheet_view == "Programs":
             labels={'x': 'Location', 'y': 'Number of Programs'},
             title="Program Distribution by Location"
         )
+        fig.update_traces(text=location_dist.values, textposition='outside')
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
@@ -354,6 +359,7 @@ elif sheet_view == "Programs":
             labels={'x': 'Trainees per Course', 'y': 'Count'},
             title="Distribution of Course Sizes"
         )
+        fig.update_traces(text=trainees_per_course.values, textposition='outside')
         st.plotly_chart(fig, use_container_width=True)
     
     # Data table
@@ -398,6 +404,7 @@ elif sheet_view == "Trainees":
             labels={'x': 'Number of Trainees', 'y': 'Job Position'},
             title="Top 10 Job Positions"
         )
+        fig.update_traces(text=job_counts.values, textposition='outside')
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
@@ -408,6 +415,7 @@ elif sheet_view == "Trainees":
             names=qual_counts.index,
             title="Trainees by Educational Qualification"
         )
+        fig.update_traces(textinfo="label+percent+value")
         st.plotly_chart(fig, use_container_width=True)
     
     col1, col2 = st.columns(2)
@@ -422,6 +430,7 @@ elif sheet_view == "Trainees":
             labels={'x': 'Number of Trainees', 'y': 'Workplace'},
             title="Top 10 Workplaces"
         )
+        fig.update_traces(text=workplace_counts.values, textposition='outside')
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
@@ -503,6 +512,7 @@ elif sheet_view == "Registrations":
             labels={'x': 'Attendance %', 'count': 'Number of Registrations'},
             title="Attendance Distribution"
         )
+        fig.update_traces(texttemplate='%{y}', textposition='outside')
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
@@ -515,6 +525,7 @@ elif sheet_view == "Registrations":
                 labels={'x': 'Final Exam Score', 'y': 'Count'},
                 title="Final Exam Score Distribution"
             )
+            fig.update_traces(texttemplate='%{y}', textposition='outside')
             st.plotly_chart(fig, use_container_width=True)
     
     # Data table
@@ -574,13 +585,17 @@ else:  # Comparative Analysis
         name='Planned Capacity',
         x=comparison['البرنامج التدريبي'],
         y=comparison['planned_capacity'],
-        marker_color='lightblue'
+        marker_color='lightblue',
+        text=comparison['planned_capacity'],
+        textposition='outside'
     ))
     fig.add_trace(go.Bar(
         name='Actual Registrations',
         x=comparison['البرنامج التدريبي'],
         y=comparison['actual_registrations'],
-        marker_color='darkblue'
+        marker_color='darkblue',
+        text=comparison['actual_registrations'],
+        textposition='outside'
     ))
     
     fig.update_layout(
@@ -603,6 +618,7 @@ else:  # Comparative Analysis
         color='fulfillment_rate',
         color_continuous_scale='RdYlGn'
     )
+    fig.update_traces(text=comparison['fulfillment_rate'], textposition='outside')
     fig.update_layout(height=400)
     st.plotly_chart(fig, use_container_width=True)
     
@@ -621,6 +637,7 @@ else:  # Comparative Analysis
             labels={'x': 'Number of Programs', 'y': 'Location'},
             title="Top 10 Locations (Plan)"
         )
+        fig.update_traces(text=location_dist.values, textposition='outside')
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
@@ -633,6 +650,7 @@ else:  # Comparative Analysis
             labels={'x': 'Number of Registrations', 'y': 'Governorate'},
             title="Top 10 Governorates (Actual)"
         )
+        fig.update_traces(text=gov_dist.values, textposition='outside')
         st.plotly_chart(fig, use_container_width=True)
     
     # Comparison table
