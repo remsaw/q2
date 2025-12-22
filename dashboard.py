@@ -199,24 +199,31 @@ if sheet_view == "Overview":
     
     st.markdown("---")
     
-    # Exam Success Rates
+    # Exam Success Rates KPIs (mirroring provided design)
     col1, col2, col3 = st.columns(3)
-    
+
     # Calculate exam success rates
     initial_exam_pass = (pd.to_numeric(registration_df['نتيجة الإمتحان المبدئي'], errors='coerce') == 1).sum()
     final_exam_pass = (pd.to_numeric(registration_df['نتيجة الإمتحان النهائي'], errors='coerce') == 1).sum()
     total_registrations = len(registration_df)
-    
+
     initial_success_rate = (initial_exam_pass / total_registrations * 100) if total_registrations > 0 else 0
     final_success_rate = (final_exam_pass / total_registrations * 100) if total_registrations > 0 else 0
-    avg_success_rate = (initial_success_rate + final_success_rate) / 2
-    
+
+    # Average of final exam scores when available; fallback to final success rate
+    final_exam_scores = pd.to_numeric(registration_df.get('الامتحان النهائي'), errors='coerce')
+    avg_final_exam_success = (
+        final_exam_scores.mean()
+        if not final_exam_scores.empty and pd.notna(final_exam_scores.mean())
+        else final_success_rate
+    )
+
     with col1:
-        st.metric("متوسط النجاح في الإمتحان", f"{avg_success_rate:.2f}%")
+        st.metric("متوسط النجاح في الإمتحان النهائي", f"{avg_final_exam_success:.2f}%")
     with col2:
-        st.metric("نسبة نجاح الإمتحان البدائي", f"{initial_success_rate:.2f}%")
+        st.metric("نسبة نجاح المتدربين في الإمتحان المبدئي", f"{initial_success_rate:.2f}%")
     with col3:
-        st.metric("نسبة نجاح الإمتحان النهائي", f"{final_success_rate:.2f}%")
+        st.metric("نسبة نجاح المتدربين في الإمتحان النهائي", f"{final_success_rate:.2f}%")
     
     st.markdown("---")
     
